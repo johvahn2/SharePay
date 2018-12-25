@@ -47,7 +47,7 @@ module.exports = function () {
 
             // Demo: In test mode, replace the source with a test token so charges can work.
             if (!order.livemode) {
-                source = 'tok_visa';
+                source.id = 'tok_visa';
             }
 
             if (source) {
@@ -55,7 +55,7 @@ module.exports = function () {
 
                 try{
 
-                    charge = await charges.create(order.amount, order.currency, source ,order.email, shipping, undefined, undefined, true);
+                    charge = await charges.create(order.amount, order.currency, source.id ,order.email, shipping, undefined, undefined, true);
 
                 }catch(err){
                     status = 'failed';
