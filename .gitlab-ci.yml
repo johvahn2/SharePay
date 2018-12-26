@@ -1,0 +1,38 @@
+stages:
+  - test
+  - build
+  - deploy
+
+test:
+  stage: test
+  tags:
+    - SF-Tag
+  script: echo "Testing Running"
+  except:
+    - master
+
+build:
+  stage: build
+  tags: 
+    - SF-Tag
+  script: 
+    - echo "Building the app"
+
+deploy:
+    stage: deploy
+    tags:
+     - SF-Tag
+    script:
+      - echo "Running Deploy"
+      - ssh sharefold@104.131.166.68 rm -rf stage
+      - ssh sharefold@104.131.166.68 mkdir stage
+      - scp -r ./ sharefold@104.131.166.68:./stage
+      - ssh sharefold@104.131.166.68 docker run -d -i -p 5000:5000 --name=Pay_Container nodey
+      - ssh sharefold@104.131.166.68 docker cp ./stage Pay_Container:/prod
+      - ssh sharefold@104.131.166.68 docker cp ./stage/Serverfig/ServerScript.sh Pay_Container:/
+      - ssh sharefold@104.131.166.68 docker exec Pay_Container /bin/sh ./ServerScript.sh
+    environment:
+        name: production
+    #when: manual
+    only:
+      - master

@@ -42,14 +42,6 @@ module.exports = function () {
     });
 
 
-    // Retrieve an charge.
-    router.get('/:id', async (req, res) => {
-        try {
-        return res.status(200).json({status: 'true', mess: "Got Order", order: await orders.retrieve(req.params.id)});
-        } catch (err) {
-        return res.sendStatus(404);
-        }
-    });
 
 
     // Pay Capture a Charge.
@@ -83,6 +75,16 @@ module.exports = function () {
             });
         }
 
+    });
+
+
+    // Retrieve an charge.
+    router.get('/:id', async (req, res) => {
+        try {
+        return res.status(200).json({status: 'true', mess: "Got Order", order: await orders.retrieve(req.params.id)});
+        } catch (err) {
+        return res.sendStatus(404);
+        }
     });
 
     return router;
