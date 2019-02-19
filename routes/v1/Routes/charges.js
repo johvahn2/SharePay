@@ -7,8 +7,8 @@ module.exports = function () {
 
     //  Create a Charge.
     router.post('/', async (req,res) => {
-        let {amount, currency, source, shipping, receipt_email, description,project, tag, type, customer, capture} = req.body;
-        tag= description;
+        let {amount, currency, source, shipping, receipt_email, description,project, type, customer, capture} = req.body;
+
         if(!amount || !source || !currency || !receipt_email || !capture){
             return json({status:'false', mess: "Feilds Missing"});
         }
@@ -18,10 +18,12 @@ module.exports = function () {
 
             var payment = new paymentModel({
                 charge_id:charge.id,
+                capture: capture,
+                currency:currency,
                 amount:charge.amount,
                 livemode: charge.livemode,
                 email:receipt_email,
-                tag: tag,
+                description: description,
                 project: project
             });
 
@@ -42,8 +44,6 @@ module.exports = function () {
     });
 
 
-
-
     // Pay Capture a Charge.
     router.post('/capture/pay', async (req,res) => {
         let {chargeId, amount} = req.body;
@@ -51,8 +51,13 @@ module.exports = function () {
         try{
 
             let order = await charges.capture(chargeId,amount);
+
+            paymentModel.updateOne({charge_id:chargeId},{ $set: {capture: "true", amount: amount}},function(err,payment){
+                if(err){return res.json({status:'false', mess: err});}
+
+                return res.status(200).json({status:'true', order});
+            });
             
-            return res.status(200).json({status:'true', order});
 
         }catch(err){
             return res.status(500).json({status:'false', mess: err.message});
@@ -61,12 +66,52 @@ module.exports = function () {
     });
 
 
-    router.get('/retrieve', function (req, res) {
+    router.get('/retrieve', function (req, res) { //TODO
 
-        var retrieve_all = req.query.all || 'false';
+        let all = req.query.all || 'true';
+        let charge_id = req.query.charge_id || null;
+        let id = req.query.id || null;
+        let project = req.query.project || null;
+        let email = req.query.email || null;
+        let live = req.query.live || true;
+        let capture = req.query.capture || true;
+
     
-        if (retrieve_all === 'false') {
-            res.json({ status: "false", mess: "TODO" });
+        if (all === 'false') {
+            if(id !== null) {
+                paymentModel.findOne({_id: id}, function (err, payment) {//Search ID
+                    if (err || !payment) return res.json({ status: "false", mess: "Could Not Find Any Payment" });
+        
+                    res.json({ status: "true", mess: "Found Payment", data: payment});
+                });            
+            } else if(charge_id !== null) {//Search Charge_id
+                paymentModel.findOne({charge_id: charge_id}, function (err, payment) {
+                    if (err || !payment) return res.json({ status: "false", mess: "Could Not Find Any Payment" });
+        
+                    res.json({ status: "true", mess: "Found Payment", data: payment});
+                });  
+            } else if(project !== null) { //Search Project
+                if(email !== null) {
+                    paymentModel.findOne({project: project, email: email, livemode:live, capture:capture}, function (err, payment) {
+                        if (err || !payment) return res.json({ status: "false", mess: "Could Not Find Any Payment" });
+            
+                        res.json({ status: "true", mess: "Found Payment", data: payment});
+                    });                 
+                } else {
+                    paymentModel.find({project: project, livemode:live, capture:capture}, function (err, payments) {
+                        if (err || !payments) return res.json({ status: "false", mess: "Could Not Find Any Payments" });
+            
+                        res.json({ status: "true", mess: "Found Payments", data: payments});
+                    }); 
+                }
+            } else {
+                paymentModel.find({livemode:live, capture:capture}, function (err, payments) {
+                    if (err || !payments) return res.json({ status: "false", mess: "Could Not Find Any Payments" });
+        
+                    res.json({ status: "true", mess: "Found Payments", data: payments});
+                });    
+            }
+            
         } else {              
             paymentModel.find( function (err, payments) {
                 if (err || !payments) return res.json({ status: "false", mess: "Could Not Find Any Payments" });
