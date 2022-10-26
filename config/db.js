@@ -6,9 +6,9 @@ var test = {
 };
 
 var prod = {
-    server    : '104.131.166.68:37017',
-    user    : 'microuser',
-    password: 'micro!user321',
+    server    : '<ENTER DB URL>',
+    user    : '<ENTER USER>',
+    password: '<ENTER PASSWORD>',
     database: 'MicroDB'
 };
 
